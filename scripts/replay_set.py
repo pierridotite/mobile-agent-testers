@@ -39,6 +39,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import device_state  # noqa: E402
 import ecr_replay  # noqa: E402
+import repair  # noqa: E402
 
 SCHEMA = "mat.replay-set/0"
 # A process in the closed group tries two well known addresses: both must fail.
@@ -194,6 +195,36 @@ def details_of(entry, most=10):
     return lines
 
 
+def repair_one(trace_path, ecr, env, out, attempts, run):
+    """Proposals of an agent for one trace (scripts/repair.py), with the tools of this file."""
+    trace = json.loads(trace_path.read_text(encoding="utf-8"))
+    steps = [step for step in trace["steps"] if isinstance(step, dict)]
+    app_id = str(steps[0].get("action", {}).get("appId", "")) if steps else ""
+    values = typed_texts(trace_path, str(trace["id"]), env)
+    tools = ecr_replay.tool_env(env, values, out / "replays-debug" / f"{trace_path.stem}-repair")
+    tools.pop("REPLAY_PARAMS", None)
+    phone = {name: value for name, value in env.items() if not ecr_replay.SECRET.search(name) and name != "REPLAY_PARAMS"}
+    agent = {name: value for name, value in env.items() if name != "REPLAY_PARAMS"}   # the agent sees no typed text
+
+    def fresh_start():
+        device_state.fresh_start(run, phone, app_id)
+
+    def replay_once(path):
+        report = out / f".{trace_path.stem}-repair.json"
+        report.unlink(missing_ok=True)
+        fresh_start()
+        run(["node", ecr_replay.CLI, "replay", str(Path(path).resolve()), "--adapter", ecr_replay.ADAPTER, "--times", "1",
+             "--report", str(report.resolve())], str(ecr), tools, 300)
+        try:
+            one = json.loads(report.read_text(encoding="utf-8"))["traces"][0]["replays"][0]
+            report.unlink()
+            return one.get("outcome"), one.get("divergences", [])
+        except (OSError, ValueError, KeyError, IndexError, TypeError):
+            return "not_run", []
+
+    return repair.repair_trace(trace_path, ecr, agent, tools, out, attempts, run, replay_once, fresh_start)
+
+
 def main(argv=None, run=ecr_replay.run_tool):
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("folder")
@@ -203,6 +234,8 @@ def main(argv=None, run=ecr_replay.run_tool):
     parser.add_argument("--times", type=int, default=20)
     parser.add_argument("--closed-group", default="")
     parser.add_argument("--apk", default="")
+    parser.add_argument("--repair", type=int, default=0,
+                        help="at most this many proposals of an agent for a trace that did not replay as recorded (scripts/repair.py)")
     args = parser.parse_args(argv)
 
     persona = re.sub(r"[^\w.-]", "", args.persona)
@@ -226,7 +259,7 @@ def main(argv=None, run=ecr_replay.run_tool):
               "modelKeyPresent": False, "traces": []}
     if args.apk and Path(args.apk).is_file():
         result["app"]["apkSha256"] = sha256(args.apk)
-    printed = []
+    printed, private_repairs = [], []
     for trace_path in traces:
         try:
             entry, said = replay_trace(trace_path, Path(args.ecr), env, out, times, closed_group, run)
@@ -237,6 +270,17 @@ def main(argv=None, run=ecr_replay.run_tool):
         print(f"replays: {line_of(entry)}")
         for detail in details_of(entry):
             print(f"replays:   {detail}")
+        if args.repair > 0 and entry.get("status") == "replayed" and any(r["outcome"] != entry.get("recorded") for r in entry["replays"]):
+            try:
+                public, private, said = repair_one(trace_path, Path(args.ecr), env, out, min(args.repair, 3), run)
+            except (OSError, ValueError, AttributeError, TypeError, KeyError) as error:
+                public, private, said = {"id": entry.get("id"), "error": type(error).__name__}, {}, f"{type(error).__name__}: {error}\n"
+            result.setdefault("repairs", []).append(public)
+            private_repairs.append(private)
+            printed.append(said)
+            for line in repair.line_of(public) if "attempts" in public else [f"{entry.get('id')}: the repair could not run"]:
+                print(f"repairs: {line}")
+            (out / "repairs-private.json").write_text(json.dumps(private_repairs, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         (out / "replays.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")   # kept after each trace
     (out / "replays.txt").write_text("\n".join(printed), encoding="utf-8")
     report = os.environ.get("GITHUB_STEP_SUMMARY")

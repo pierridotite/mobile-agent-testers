@@ -53,6 +53,21 @@ Each replay that does not give what its trace recorded gets a line of its own: w
 
 Before each replay of a trace that starts with `launchApp` and `clearState`, the harness stops the app and clears its data itself, then reads the system log from that moment. Maestro does the same at the first step of the flow, yet on some emulators a replay found the app on the screen where the replay before it ended, with no new start in the log: 5 of 20 replays of the demo traces in one run, 0 of 20 in another. Replays that follow each other on one phone must start like separate runs of a CI. The run page says how often the replay cleared the app again by itself.
 
+## Ask the agent to repair a step
+
+When the app changed and a kept trace no longer replays as recorded, the agent can propose a new action for the step where it stopped. This uses your model credit:
+
+```bash
+gh workflow run agent-testers.yml -f android_personas=malik -f ios_personas=none \
+  -f replay_traces=traces/demo-app -f replay_times=3 -f repair=3
+```
+
+For each trace that did not replay as recorded, [scripts/repair.py](../scripts/repair.py) replays it once more so that the phone shows the screen where it stops, takes a screenshot, and gives the agent the prompt of [briefs/repair.md](../briefs/repair.md): the steps of the trace without their checks, the type and the step of the stop, and the screen. The agent answers with one step id and one action, or with no action when one action is not enough. `ecr repair` replays the trace with it and accepts it only if the replay then gives what the trace recorded; otherwise the reason goes into the next prompt, at most `repair` times (3 at most). An accepted trace is replayed 3 more times, and its checks are compared with the ones before. A check that fails is never repaired: it is a regression or an intended change, and a person decides.
+
+The run page gets one line per attempt: where the trace stopped, the step and the kind of the proposed action, accepted or the reason of the refusal, the 3 replays after, and the cost of the agent. The proposals hold texts of the app, so they join the encrypted results (`repairs-private.json`); add `, public` (`-f repair="3, public"`) to print them too, for an open-source app only. A typed text is never printed.
+
+After an exploration, when the repository keeps traces for that persona and app (`traces/<app>/<persona>/`), the run page also says, for each of them, whether the agent reached the screen its last checks name ([scripts/goal_check.py](../scripts/goal_check.py)), with no text of the app.
+
 ## What it is today
 
 - **Experimental.** A path of 44 steps on Tiny Todo, the demo app, followed by a script with the tools of an agent, is written as a trace and replays from end to end on an Android 11 emulator with no model: the [Replay check](../.github/workflows/replay-check.yml) workflow, started by hand, free. Two paths of real agents have replayed from end to end so far, with no model: the 37 steps of the map maker ([briefs/map.md](../briefs/map.md)) in 91 s, and the 25 steps of a tester in 72 s. Before them, the path of a tester (72 steps) stopped at step 12, because the trace did not count elements that share a name the way Maestro does, and another one (62 steps) stopped at step 58, on a tap by name. Its trace is encrypted, so the cause is not known for sure. Two things the trace missed that day are now in it: a field the agent empties, and where a tap lands before a field is emptied. The check replays the path as it was once written, to show where each of these stops it. Two paths are not a rate: how often a tester's path replays is not measured yet, and both are shorter than the one that stopped at step 58.

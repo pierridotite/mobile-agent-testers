@@ -37,8 +37,11 @@ adb logcat -c; sleep 5
 # Replays only (replay_traces): the traces kept in that folder for this persona are replayed on this
 # phone, several times, with no agent and no model key (scripts/replay_set.py, docs/replay.md)
 if [ -n "${REPLAY_TRACES:-}" ]; then
+  # repair: "3" or "3, public" (scripts/repair.py): proposals of the agent, checked by ecr repair
+  REPAIR_N=$(printf '%s' "${REPAIR:-}" | tr -cd '0-9' | cut -c1); case "${REPAIR:-}" in *public*) export PUBLIC_PROPOSALS=true ;; esac
+  [ -n "$REPAIR_N" ] && [ "$REPAIR_N" != 0 ] && { source scripts/llm_env.sh || exit 1; }
   python3 scripts/replay_set.py "$REPLAY_TRACES" --persona "$PERSONA" --ecr .ecr --out "results/$PERSONA" \
-    --times "${REPLAY_TIMES:-20}" --closed-group "${REPLAY_CLOSED_GROUP:-}" --apk app.apk || true   # never fails the run
+    --times "${REPLAY_TIMES:-20}" --closed-group "${REPLAY_CLOSED_GROUP:-}" --apk app.apk --repair "${REPAIR_N:-0}" || true   # never fails the run
   echo "Replays finished, $(find "results/$PERSONA" -type f | wc -l) files"
   exit 0
 fi
@@ -100,6 +103,8 @@ case "${MAP:-none}" in
     CODE=$?
     python3 scripts/agent_status.py results/agent-output.json results/agent-errors.txt "$PERSONA" || true
     python3 scripts/ecr_trace.py "results/$PERSONA" --persona "$PERSONA" --app-id "$APP_ID" --agent-output results/agent-output.json || true   # never fails the run
+    # When traces are kept for this persona and app (traces/<app>/<persona>/): did the agent reach their last screen?
+    python3 scripts/goal_check.py "results/$PERSONA" --persona "$PERSONA" --app-id "$APP_ID" || true
     ;;
 esac
 if [ -n "$REC" ]; then

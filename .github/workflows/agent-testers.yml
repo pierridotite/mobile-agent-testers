@@ -79,6 +79,9 @@ on:
         description: "With replay_traces: replays of each trace, the last one with the network of the tools closed"
         type: number
         default: 20
+      repair:
+        description: "With replay_traces, uses your model credit: when a trace does not replay as recorded, at most this many proposals of the agent for the step, each checked by ecr repair (docs/replay.md). Add ', public' to print the proposals (open-source apps only)"
+        default: ""
 
 permissions:
   contents: read
@@ -295,8 +298,8 @@ jobs:
       - name: Emulator + agent
         uses: reactivecircus/android-emulator-runner@v2
         env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ inputs.replay_traces == '' && secrets.CLAUDE_CODE_OAUTH_TOKEN || '' }}
-          ANTHROPIC_API_KEY: ${{ inputs.replay_traces == '' && secrets.ANTHROPIC_API_KEY || '' }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ (inputs.replay_traces == '' || inputs.repair != '') && secrets.CLAUDE_CODE_OAUTH_TOKEN || '' }}
+          ANTHROPIC_API_KEY: ${{ (inputs.replay_traces == '' || inputs.repair != '') && secrets.ANTHROPIC_API_KEY || '' }}
           PERSONA: ${{ matrix.persona }}
           DEVICE: ${{ matrix.device }}
           FONT_SCALE: ${{ matrix.font_scale }}
@@ -308,13 +311,14 @@ jobs:
           BRIEF: ${{ inputs.bug_report != '' && inputs.brief == 'AGENT_BRIEF.md' && 'briefs/reproduce.md' || inputs.brief }}
           MODEL: ${{ inputs.model }}
           LLM_BASE_URL: ${{ inputs.llm_base_url }}
-          LLM_API_KEY: ${{ inputs.replay_traces == '' && secrets.LLM_API_KEY || '' }}
+          LLM_API_KEY: ${{ (inputs.replay_traces == '' || inputs.repair != '') && secrets.LLM_API_KEY || '' }}
           BLOCK_HOSTS: ${{ inputs.block_hosts }}
           RECORD_VIDEO: ${{ inputs.record_video }}
           REPLAY_PATH: ${{ inputs.replay_path }}
           MAP: ${{ inputs.map }}
           REPLAY_TRACES: ${{ inputs.replay_traces }}
           REPLAY_TIMES: ${{ inputs.replay_times }}
+          REPAIR: ${{ inputs.repair }}
           REPLAY_CLOSED_GROUP: ${{ inputs.replay_traces != '' && 'noinet' || '' }}
           REPLAY_PARAMS: ${{ inputs.replay_traces != '' && secrets.REPLAY_PARAMS || '' }}
           APP_SOURCE: ${{ inputs.source_repo || github.repository }}
