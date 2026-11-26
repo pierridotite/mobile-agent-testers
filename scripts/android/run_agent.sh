@@ -34,33 +34,45 @@ fi
 adb emu geo fix "${GEO#*,}" "${GEO%,*}" >/dev/null 2>&1   # longitude first
 adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
 adb logcat -c; sleep 5
+# Optional screen recording (record_video), kept in results/ (encrypted like the rest), of the agent
+# and of the replays alike. The files stay out of the shared storage: a file picker would show them.
+REC=""
+start_recording() {
+  [ "${RECORD_VIDEO:-false}" = true ] || return 0
+  adb shell settings put system show_touches 1
+  SZ=$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | tail -1); W=${SZ%x*}; H=${SZ#*x}
+  RW=$((W * 2 / 3 / 16 * 16)); RH=$((H * RW / W / 16 * 16))   # 2/3 size, multiples of 16 for the encoder
+  rm -f /tmp/stop-rec
+  # screenrecord stops at 180 s: chain files until the run is done
+  ( i=0; opt="--size ${RW}x${RH}"
+    while [ ! -f /tmp/stop-rec ] && [ $i -lt 40 ]; do
+      i=$((i + 1)); t0=$(date +%s)
+      adb shell screenrecord $opt --bit-rate 4000000 --time-limit 180 "/data/local/tmp/rec_$(printf %02d $i).mp4"
+      [ $(($(date +%s) - t0)) -lt 3 ] && opt=""   # size refused: native size
+    done ) &
+  REC=$!
+}
+stop_recording() {
+  [ -n "$REC" ] || return 0
+  touch /tmp/stop-rec; adb shell pkill -INT screenrecord; sleep 4; kill "$REC" 2>/dev/null
+  mkdir -p "results/$PERSONA/video"
+  for f in $(adb shell ls /data/local/tmp/ | tr -d '\r' | grep '^rec_'); do adb pull "/data/local/tmp/$f" "results/$PERSONA/video/" >/dev/null 2>&1; done
+}
 # Replays only (replay_traces): the traces kept in that folder for this persona are replayed on this
 # phone, several times, with no agent and no model key (scripts/replay_set.py, docs/replay.md)
 if [ -n "${REPLAY_TRACES:-}" ]; then
   # repair: "3" or "3, public" (scripts/repair.py): proposals of the agent, checked by ecr repair
   REPAIR_N=$(printf '%s' "${REPAIR:-}" | tr -cd '0-9' | cut -c1); case "${REPAIR:-}" in *public*) export PUBLIC_PROPOSALS=true ;; esac
   [ -n "$REPAIR_N" ] && [ "$REPAIR_N" != 0 ] && { source scripts/llm_env.sh || exit 1; }
+  start_recording
   python3 scripts/replay_set.py "$REPLAY_TRACES" --persona "$PERSONA" --ecr .ecr --out "results/$PERSONA" \
     --times "${REPLAY_TIMES:-20}" --closed-group "${REPLAY_CLOSED_GROUP:-}" --apk app.apk --repair "${REPAIR_N:-0}" || true   # never fails the run
+  stop_recording
   echo "Replays finished, $(find "results/$PERSONA" -type f | wc -l) files"
   exit 0
 fi
-# 4. Optional screen recording, kept in results/ (encrypted like the rest)
-REC=""
-if [ "${RECORD_VIDEO:-false}" = true ]; then
-  adb shell settings put system show_touches 1
-  SZ=$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | tail -1); W=${SZ%x*}; H=${SZ#*x}
-  RW=$((W * 2 / 3 / 16 * 16)); RH=$((H * RW / W / 16 * 16))   # 2/3 size, multiples of 16 for the encoder
-  rm -f /tmp/stop-rec
-  # screenrecord stops at 180 s: chain files until the agent is done
-  ( i=0; opt="--size ${RW}x${RH}"
-    while [ ! -f /tmp/stop-rec ] && [ $i -lt 40 ]; do
-      i=$((i + 1)); t0=$(date +%s)
-      adb shell screenrecord $opt --bit-rate 4000000 --time-limit 180 "/sdcard/rec_$(printf %02d $i).mp4"
-      [ $(($(date +%s) - t0)) -lt 3 ] && opt=""   # size refused: native size
-    done ) &
-  REC=$!
-fi
+# 4. The recording of the agent starts here
+start_recording
 # 5. The agent: only the listed tools, nothing else (another model API if llm_base_url is set).
 # Its adb goes through scripts/android/shim/adb, which notes each tap and runs the real adb:
 # scripts/ecr_trace.py turns these notes into a path that replays with no model.
@@ -107,11 +119,7 @@ case "${MAP:-none}" in
     python3 scripts/goal_check.py "results/$PERSONA" --persona "$PERSONA" --app-id "$APP_ID" || true
     ;;
 esac
-if [ -n "$REC" ]; then
-  touch /tmp/stop-rec; adb shell pkill -INT screenrecord; sleep 4; kill "$REC" 2>/dev/null
-  mkdir -p "results/$PERSONA/video"
-  for f in $(adb shell ls /sdcard/ | tr -d '\r' | grep '^rec_'); do adb pull "/sdcard/$f" "results/$PERSONA/video/" >/dev/null 2>&1; done
-fi
+stop_recording
 # 6. Optional: the path just written is replayed on the same phone, with no model (docs/replay.md)
 if [ "${REPLAY_PATH:-false}" = true ]; then
   for d in "results/$PERSONA" "results/$PERSONA"/map-* "results/$PERSONA/agent"; do
