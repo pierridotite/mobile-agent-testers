@@ -1,0 +1,377 @@
+{
+  "schema": "ecr.trace/0",
+  "id": "felipe-20261125T212237",
+  "adapter": {
+    "id": "mobile-maestro"
+  },
+  "persona": {
+    "id": "felipe",
+    "profile": "Delivery rider, 27, reads Portuguese, cheap phone, taps fast between deliveries.",
+    "goal": "Get to the main feature as fast as possible and use it twice in a row.",
+    "locale": "pt-BR",
+    "context": {
+      "platform": "android",
+      "device": "Pixel 3a, Android 12",
+      "fontScale": 1.15,
+      "theme": "light"
+    }
+  },
+  "params": [
+    {
+      "name": "TEXT_1",
+      "secret": true,
+      "description": "A text the agent typed"
+    },
+    {
+      "name": "TEXT_2",
+      "secret": true,
+      "description": "A text the agent typed"
+    }
+  ],
+  "invariants": [],
+  "steps": [
+    {
+      "id": "s1",
+      "action": {
+        "kind": "launchApp",
+        "appId": "org.localsend.localsend_app.debug",
+        "clearState": true
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s1-home",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Receber via link"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Enviar Guia 2 de 3"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s2-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Dispositivos por perto"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "01",
+        "point": [
+          540,
+          1978
+        ],
+        "bounds": [
+          360,
+          1868,
+          720,
+          2088
+        ],
+        "size": [
+          1080,
+          2220
+        ]
+      }
+    },
+    {
+      "id": "s3",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Texto"
+        },
+        "at": "97%,90%"
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s3-message-dialog",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Digite a mensagem"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "03",
+        "point": [
+          198,
+          521
+        ],
+        "bounds": [
+          41,
+          432,
+          355,
+          611
+        ],
+        "size": [
+          1080,
+          2220
+        ]
+      }
+    },
+    {
+      "id": "s4",
+      "action": {
+        "kind": "eraseText"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "04"
+      }
+    },
+    {
+      "id": "s5",
+      "action": {
+        "kind": "inputText",
+        "text": {
+          "param": "TEXT_1"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "04"
+      }
+    },
+    {
+      "id": "s6",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Confirmar"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s6-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Dispositivos por perto"
+            }
+          }
+        },
+        {
+          "id": "ai-s6-selection-made",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Editar"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "04",
+        "point": [
+          714,
+          903
+        ],
+        "bounds": [
+          570,
+          837,
+          859,
+          969
+        ],
+        "size": [
+          1080,
+          2220
+        ]
+      }
+    },
+    {
+      "id": "s7",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Envio manual"
+        },
+        "at": "97%,90%"
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s7-address-dialog",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Digite o endereço"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "05",
+        "point": [
+          740,
+          844
+        ],
+        "bounds": [
+          685,
+          789,
+          795,
+          899
+        ],
+        "size": [
+          1080,
+          2220
+        ]
+      }
+    },
+    {
+      "id": "s8",
+      "action": {
+        "kind": "eraseText"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "06"
+      }
+    },
+    {
+      "id": "s9",
+      "action": {
+        "kind": "inputText",
+        "text": {
+          "param": "TEXT_2"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "06"
+      }
+    },
+    {
+      "id": "s10",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Confirmar"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "06",
+        "point": [
+          725,
+          1109
+        ],
+        "bounds": [
+          563,
+          1043,
+          887,
+          1175
+        ],
+        "size": [
+          1080,
+          2220
+        ]
+      }
+    },
+    {
+      "id": "s11",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Cancelar"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s11-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Dispositivos por perto"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "07",
+        "point": [
+          408,
+          1437
+        ],
+        "bounds": [
+          276,
+          1371,
+          541,
+          1503
+        ],
+        "size": [
+          1080,
+          2220
+        ]
+      }
+    },
+    {
+      "id": "s12",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Configurações Guia 3 de 3"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "07",
+        "point": [
+          900,
+          1978
+        ],
+        "bounds": [
+          720,
+          1868,
+          1080,
+          2088
+        ],
+        "size": [
+          1080,
+          2220
+        ]
+      }
+    },
+    {
+      "id": "s12ok",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "OK"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s12-settings-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Configurações"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "evidence": {
+    "lastScreen": "08"
+  },
+  "provenance": {
+    "exploredAt": "2026-11-25T21:22:37Z",
+    "agent": "mobile-agent-testers",
+    "model": "claude-sonnet-5-5"
+  }
+}

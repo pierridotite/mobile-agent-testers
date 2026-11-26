@@ -1,0 +1,349 @@
+{
+  "schema": "ecr.trace/0",
+  "id": "lucia-20261125T212222",
+  "adapter": {
+    "id": "mobile-maestro"
+  },
+  "persona": {
+    "id": "lucia",
+    "profile": "Teacher, 47, uses the family tablet, reads Spanish.",
+    "goal": "Use the main feature on the big screen and judge whether the layout uses the space.",
+    "locale": "es-ES",
+    "context": {
+      "platform": "android",
+      "device": "Pixel Tablet, Android 14",
+      "fontScale": 1.0,
+      "theme": "light"
+    }
+  },
+  "params": [
+    {
+      "name": "TEXT_1",
+      "secret": true,
+      "description": "A text the agent typed"
+    }
+  ],
+  "invariants": [],
+  "steps": [
+    {
+      "id": "s1",
+      "action": {
+        "kind": "launchApp",
+        "appId": "org.localsend.localsend_app.debug",
+        "clearState": true
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s1-home",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Recibir mediante enlace"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Enviar Pestaña 3 de 3"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s2-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Dispositivos Cercanos"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "01",
+        "point": [
+          256,
+          384
+        ],
+        "bounds": [
+          0,
+          340,
+          512,
+          428
+        ],
+        "size": [
+          2560,
+          1600
+        ]
+      }
+    },
+    {
+      "id": "s3",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Texto"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s3-message-dialog",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Escribe un mensaje"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "02",
+        "point": [
+          1760,
+          281
+        ],
+        "bounds": [
+          1658,
+          216,
+          1862,
+          346
+        ],
+        "size": [
+          2560,
+          1600
+        ]
+      }
+    },
+    {
+      "id": "s4",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Cerrar"
+        },
+        "at": "97%,90%"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "03",
+        "point": [
+          1280,
+          382
+        ],
+        "bounds": [
+          0,
+          0,
+          2560,
+          1600
+        ],
+        "size": [
+          2560,
+          1600
+        ]
+      }
+    },
+    {
+      "id": "s5",
+      "action": {
+        "kind": "eraseText"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "03"
+      }
+    },
+    {
+      "id": "s6",
+      "action": {
+        "kind": "inputText",
+        "text": {
+          "param": "TEXT_1"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "03"
+      }
+    },
+    {
+      "id": "s7",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Confirmar"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s7-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Dispositivos Cercanos"
+            }
+          }
+        },
+        {
+          "id": "ai-s7-selection-made",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Editar"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "04",
+        "point": [
+          1445,
+          526
+        ],
+        "bounds": [
+          1349,
+          478,
+          1541,
+          574
+        ],
+        "size": [
+          2560,
+          1600
+        ]
+      }
+    },
+    {
+      "id": "s8",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Enviar manualmente"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s8-address-dialog",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Introducir dirección"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "05",
+        "point": [
+          1451,
+          658
+        ],
+        "bounds": [
+          1411,
+          618,
+          1491,
+          698
+        ],
+        "size": [
+          2560,
+          1600
+        ]
+      }
+    },
+    {
+      "id": "s9",
+      "action": {
+        "kind": "pressKey",
+        "key": "Back"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "06"
+      }
+    },
+    {
+      "id": "s10",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Cancelar"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s10-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Dispositivos Cercanos"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "07",
+        "point": [
+          1184,
+          981
+        ],
+        "bounds": [
+          1096,
+          933,
+          1272,
+          1029
+        ],
+        "size": [
+          2560,
+          1600
+        ]
+      }
+    },
+    {
+      "id": "s11",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "Ajustes Pestaña 2 de 3"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s11-settings-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "Ajustes"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "07",
+        "point": [
+          256,
+          472
+        ],
+        "bounds": [
+          0,
+          428,
+          512,
+          516
+        ],
+        "size": [
+          2560,
+          1600
+        ]
+      }
+    }
+  ],
+  "evidence": {
+    "lastScreen": "08"
+  },
+  "provenance": {
+    "exploredAt": "2026-11-25T21:22:22Z",
+    "agent": "mobile-agent-testers",
+    "model": "claude-sonnet-5-5"
+  }
+}

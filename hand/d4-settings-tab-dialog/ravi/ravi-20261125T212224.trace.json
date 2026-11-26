@@ -1,0 +1,488 @@
+{
+  "schema": "ecr.trace/0",
+  "id": "ravi-20261125T212224",
+  "adapter": {
+    "id": "mobile-maestro"
+  },
+  "persona": {
+    "id": "ravi",
+    "profile": "Shop owner, 44, reads Hindi, new to apps, careful with every button.",
+    "goal": "Understand what the app is for and finish one task without English.",
+    "locale": "hi-IN",
+    "context": {
+      "platform": "android",
+      "device": "Small phone, Android 10",
+      "fontScale": 1.15,
+      "theme": "light"
+    }
+  },
+  "params": [
+    {
+      "name": "TEXT_1",
+      "secret": true,
+      "description": "A text the agent typed"
+    },
+    {
+      "name": "TEXT_2",
+      "secret": true,
+      "description": "A text the agent typed"
+    }
+  ],
+  "invariants": [],
+  "steps": [
+    {
+      "id": "s1",
+      "action": {
+        "kind": "launchApp",
+        "appId": "org.localsend.localsend_app.debug",
+        "clearState": true
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s1-home",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "लिंक के ज़रिए प्राप्त करें"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "भेजें 3 का टैब 2"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s2-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "निकटवर्ती उपकरण"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "01",
+        "point": [
+          540,
+          1689
+        ],
+        "bounds": [
+          360,
+          1584,
+          720,
+          1794
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s3",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "पाठ"
+        },
+        "at": "97%,90%"
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s3-message-dialog",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "संदेश टाइप करें"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "02",
+        "point": [
+          197,
+          497
+        ],
+        "bounds": [
+          39,
+          412,
+          356,
+          583
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s4",
+      "action": {
+        "kind": "eraseText"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "03"
+      }
+    },
+    {
+      "id": "s5",
+      "action": {
+        "kind": "inputText",
+        "text": {
+          "param": "TEXT_1"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "03"
+      }
+    },
+    {
+      "id": "s6",
+      "action": {
+        "kind": "eraseText"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "04"
+      }
+    },
+    {
+      "id": "s7",
+      "action": {
+        "kind": "inputText",
+        "text": {
+          "param": "TEXT_2"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "04"
+      }
+    },
+    {
+      "id": "s8",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "पुष्टि करें"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s8-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "निकटवर्ती उपकरण"
+            }
+          }
+        },
+        {
+          "id": "ai-s8-selection-made",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "संपादित करें"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "05",
+        "point": [
+          740,
+          722
+        ],
+        "bounds": [
+          636,
+          659,
+          845,
+          785
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s9",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "समस्या निवारण"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s9-troubleshoot-page",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "समस्या निवारण"
+            }
+          }
+        },
+        {
+          "id": "ai-s9-troubleshoot-help",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "क्या ऐप उम्मीद के मुताबिक काम नहीं कर रहा है? यहाँ आप कुछ सामान्य समाधान पा सकते हैं।"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "06",
+        "point": [
+          540,
+          1236
+        ],
+        "bounds": [
+          377,
+          1173,
+          703,
+          1299
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s10",
+      "action": {
+        "kind": "pressKey",
+        "key": "Back"
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s10-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "निकटवर्ती उपकरण"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "07"
+      }
+    },
+    {
+      "id": "s11",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "सेटिंग्स 3 का टैब 3"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "07",
+        "point": [
+          900,
+          1689
+        ],
+        "bounds": [
+          720,
+          1584,
+          1080,
+          1794
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s11ok",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "OK"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s11-settings-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "सेटिंग्स"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "s12",
+      "action": {
+        "kind": "swipe",
+        "direction": "UP",
+        "from": "50%,68%",
+        "to": "50%,21%"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "08",
+        "from": [
+          540,
+          1300
+        ],
+        "to": [
+          540,
+          400
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s13",
+      "action": {
+        "kind": "swipe",
+        "direction": "DOWN",
+        "from": "50%,26%",
+        "to": "50%,78%"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "09",
+        "from": [
+          540,
+          500
+        ],
+        "to": [
+          540,
+          1500
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s14",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "स्थानीय भेजें (फाइल भेजो)"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s14-color-choices",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "OLED"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "09",
+        "point": [
+          794,
+          709
+        ],
+        "bounds": [
+          597,
+          646,
+          991,
+          772
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s15",
+      "action": {
+        "kind": "pressKey",
+        "key": "Back"
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s15-settings-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "सेटिंग्स"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "10"
+      }
+    },
+    {
+      "id": "s16",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "सिस्टम",
+          "index": 1
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s16-language-page",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "भाषा"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "10",
+        "point": [
+          794,
+          882
+        ],
+        "bounds": [
+          597,
+          811,
+          991,
+          953
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    }
+  ],
+  "evidence": {
+    "lastScreen": "11"
+  },
+  "provenance": {
+    "exploredAt": "2026-11-25T21:22:24Z",
+    "agent": "mobile-agent-testers",
+    "model": "claude-sonnet-5-5"
+  }
+}

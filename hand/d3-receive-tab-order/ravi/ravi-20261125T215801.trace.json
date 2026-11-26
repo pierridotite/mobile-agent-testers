@@ -1,0 +1,471 @@
+{
+  "schema": "ecr.trace/0",
+  "id": "ravi-20261125T215801",
+  "adapter": {
+    "id": "mobile-maestro"
+  },
+  "persona": {
+    "id": "ravi",
+    "profile": "Shop owner, 44, reads Hindi, new to apps, careful with every button.",
+    "goal": "Understand what the app is for and finish one task without English.",
+    "locale": "hi-IN",
+    "context": {
+      "platform": "android",
+      "device": "Small phone, Android 10",
+      "fontScale": 1.15,
+      "theme": "light"
+    }
+  },
+  "params": [
+    {
+      "name": "TEXT_1",
+      "secret": true,
+      "description": "A text the agent typed"
+    },
+    {
+      "name": "TEXT_2",
+      "secret": true,
+      "description": "A text the agent typed"
+    }
+  ],
+  "invariants": [],
+  "steps": [
+    {
+      "id": "s1",
+      "action": {
+        "kind": "launchApp",
+        "appId": "org.localsend.localsend_app.debug",
+        "clearState": true
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s1-home",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "लिंक के ज़रिए प्राप्त करें"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "भेजें 3 का टैब 3"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s2-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "निकटवर्ती उपकरण"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "01",
+        "point": [
+          540,
+          1689
+        ],
+        "bounds": [
+          360,
+          1584,
+          720,
+          1794
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s3",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "पाठ"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s3-message-dialog",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "संदेश टाइप करें"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "02",
+        "point": [
+          197,
+          497
+        ],
+        "bounds": [
+          39,
+          412,
+          356,
+          583
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s4",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "खारिज करें"
+        },
+        "at": "97%,90%"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "03",
+        "point": [
+          540,
+          533
+        ],
+        "bounds": [
+          0,
+          0,
+          1080,
+          1794
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s5",
+      "action": {
+        "kind": "eraseText"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "03"
+      }
+    },
+    {
+      "id": "s6",
+      "action": {
+        "kind": "inputText",
+        "text": {
+          "param": "TEXT_1"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "03"
+      }
+    },
+    {
+      "id": "s7",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "पुष्टि करें"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s7-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "निकटवर्ती उपकरण"
+            }
+          }
+        },
+        {
+          "id": "ai-s7-selection-made",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "संपादित करें"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "04",
+        "point": [
+          740,
+          722
+        ],
+        "bounds": [
+          636,
+          659,
+          845,
+          785
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s8",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "मैन्युअल भेजना"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s8-address-dialog",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "पता दर्ज करें"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "05",
+        "point": [
+          561,
+          817
+        ],
+        "bounds": [
+          509,
+          765,
+          614,
+          870
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s9",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "खारिज करें"
+        },
+        "at": "97%,90%"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "06",
+        "point": [
+          540,
+          580
+        ],
+        "bounds": [
+          0,
+          0,
+          1080,
+          1794
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s10",
+      "action": {
+        "kind": "eraseText"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "06"
+      }
+    },
+    {
+      "id": "s11",
+      "action": {
+        "kind": "inputText",
+        "text": {
+          "param": "TEXT_2"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "06"
+      }
+    },
+    {
+      "id": "s12",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "पुष्टि करें"
+        }
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "06",
+        "point": [
+          724,
+          927
+        ],
+        "bounds": [
+          604,
+          864,
+          845,
+          990
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s13",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "रद्द करें"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s13-send-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "निकटवर्ती उपकरण"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "07",
+        "point": [
+          489,
+          1282
+        ],
+        "bounds": [
+          395,
+          1219,
+          583,
+          1345
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s14",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "सेटिंग्स 3 का टैब 2"
+        }
+      },
+      "checkpoints": [
+        {
+          "id": "ai-s14-settings-tab",
+          "check": {
+            "kind": "visible",
+            "target": {
+              "text": "सेटिंग्स"
+            }
+          }
+        }
+      ],
+      "evidence": {
+        "screen": "07",
+        "point": [
+          900,
+          1689
+        ],
+        "bounds": [
+          720,
+          1584,
+          1080,
+          1794
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s15",
+      "action": {
+        "kind": "swipe",
+        "direction": "UP",
+        "from": "50%,68%",
+        "to": "50%,21%"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "08",
+        "from": [
+          540,
+          1300
+        ],
+        "to": [
+          540,
+          400
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    },
+    {
+      "id": "s16",
+      "action": {
+        "kind": "swipe",
+        "direction": "UP",
+        "from": "50%,68%",
+        "to": "50%,16%"
+      },
+      "checkpoints": [],
+      "evidence": {
+        "screen": "09",
+        "from": [
+          540,
+          1300
+        ],
+        "to": [
+          540,
+          300
+        ],
+        "size": [
+          1080,
+          1920
+        ]
+      }
+    }
+  ],
+  "evidence": {
+    "lastScreen": "10"
+  },
+  "provenance": {
+    "exploredAt": "2026-11-25T21:58:01Z",
+    "agent": "mobile-agent-testers",
+    "model": "claude-sonnet-5-5"
+  }
+}
