@@ -228,6 +228,16 @@
       }
     },
     {
+      "id": "s7ok",
+      "action": {
+        "kind": "tapOn",
+        "target": {
+          "text": "OK"
+        }
+      },
+      "checkpoints": []
+    },
+    {
       "id": "s8",
       "action": {
         "kind": "eraseText"

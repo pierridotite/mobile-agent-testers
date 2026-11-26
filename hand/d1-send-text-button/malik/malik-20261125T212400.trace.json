@@ -194,7 +194,7 @@
       "action": {
         "kind": "tapOn",
         "target": {
-          "text": "Text"
+          "text": "Text ›"
         },
         "at": "97%,90%"
       },
