@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Starts the persona's mobile browser (scripts/web/browser.py) on the site, then hands it
-# to Claude Code. The agent's output goes to results/ (encrypted later), never to the public log.
+# to the agent CLI (the workflow's agent input). The agent's output goes to results/
+# (encrypted later), never to the public log.
 set -uo pipefail
 : "${WEB_URL:?web_url missing}" "${PERSONA:?}"
 export WEB_PORT="${WEB_PORT:-9333}"
@@ -35,10 +36,18 @@ fi
 # (page text, console errors), so its file tools stay in this checkout: read here, write only under results/.
 # shellcheck disable=SC1091  # sourced from the repo root, like the phone scripts
 source scripts/llm_env.sh || exit 1
-claude -p "Read $BRIEF and personas.json, then do the mission until the final report. PERSONA=$PERSONA PLATFORM=web URL=$WEB_URL. Device: $DEVICE, theme ${THEME:-light}${A11Y}, language $LOCALE. The site is already open in the phone's browser: use the commands of the brief directly. Report anything that does not fit this screen (cut text, off-screen buttons, content under fixed bars, sideways scrolling, broken layout)." \
-  --model "${MODEL:-sonnet}" --max-turns 400 --output-format json \
-  --allowedTools "Bash(bash scripts/web/gesture.sh:*),Bash(python3 scripts/web/screen.py:*),Bash(python3 scripts/web/type.py:*),Bash(sleep:*),Bash(ls:*),Bash(mkdir:*),Read(./**),Edit(./results/**)" \
-  > results/agent-output.json 2> results/agent-errors.txt
+PROMPT="Read $BRIEF and personas.json, then do the mission until the final report. PERSONA=$PERSONA PLATFORM=web URL=$WEB_URL. Device: $DEVICE, theme ${THEME:-light}${A11Y}, language $LOCALE. The site is already open in the phone's browser: use the commands of the brief directly. Report anything that does not fit this screen (cut text, off-screen buttons, content under fixed bars, sideways scrolling, broken layout)."
+# AGENT (the workflow's agent input) picks the CLI: opencode run, codex exec and gemini -p
+# are their documented headless runs; opencode and codex take no tool allowlist on the command line
+case "${AGENT:-claude}" in
+  claude)   AGENT_CMD=(claude -p "$PROMPT" --model "${MODEL:-sonnet}" --max-turns 400 --output-format json \
+              --allowedTools "Bash(bash scripts/web/gesture.sh:*),Bash(python3 scripts/web/screen.py:*),Bash(python3 scripts/web/type.py:*),Bash(sleep:*),Bash(ls:*),Bash(mkdir:*),Read(./**),Edit(./results/**)") ;;
+  opencode) AGENT_CMD=(opencode run "$PROMPT" --model "${MODEL:-sonnet}") ;;
+  codex)    AGENT_CMD=(codex exec "$PROMPT" -m "${MODEL:-sonnet}" --sandbox workspace-write) ;;
+  gemini)   AGENT_CMD=(gemini -p "$PROMPT" -m "${MODEL:-sonnet}" --output-format json --approval-mode yolo) ;;
+  *) echo "::error::unknown agent ${AGENT:-}: use claude, opencode, codex or gemini"; exit 1 ;;
+esac
+"${AGENT_CMD[@]}" > results/agent-output.json 2> results/agent-errors.txt
 CODE=$?
 python3 scripts/agent_status.py results/agent-output.json results/agent-errors.txt "$PERSONA" || true
 stop_browser
