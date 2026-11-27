@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Simulator booted: checks blocked hosts, applies the persona's settings,
-# installs and launches the app, then hands the simulator to Claude Code.
+# installs and launches the app, then hands the simulator to the agent CLI
+# (the workflow's agent input).
 set -uo pipefail
 : "${UDID:?}"
 mkdir -p "results/$PERSONA"
@@ -46,10 +47,18 @@ if [ "${RECORD_VIDEO:-false}" = true ]; then
 fi
 # The agent (another model API if llm_base_url is set)
 source scripts/llm_env.sh || exit 1
-claude -p "Read $BRIEF and personas.json, then do the mission until the final report. PERSONA=$PERSONA PLATFORM=ios APP_ID=$APP_ID. Device: $DEVICE, text size ${TEXT_SIZE:-large}, theme ${THEME:-light}${A11Y}, language $LOCALE. The simulator is already booted and the tools find it on their own (UDID is set): use the commands of the brief directly. Report anything that does not fit this screen (cut text, off-screen buttons, under the notch or home bar, broken layout)." \
-  --model "${MODEL:-sonnet}" --max-turns 400 --output-format json \
-  --allowedTools "Bash(bash scripts/ios/gesture.sh:*),Bash(python3 scripts/ios/screen.py:*),Bash(python3 scripts/ios/type.py:*),Bash(sleep:*),Bash(ls:*),Bash(mkdir:*),Read(AGENT_BRIEF.md),Read(briefs/**),Read(personas.json),Read(bug_report.md),Read(results/**),Write(./results/**),Edit(./results/**)" \
-  > results/agent-output.json 2> results/agent-errors.txt
+PROMPT="Read $BRIEF and personas.json, then do the mission until the final report. PERSONA=$PERSONA PLATFORM=ios APP_ID=$APP_ID. Device: $DEVICE, text size ${TEXT_SIZE:-large}, theme ${THEME:-light}${A11Y}, language $LOCALE. The simulator is already booted and the tools find it on their own (UDID is set): use the commands of the brief directly. Report anything that does not fit this screen (cut text, off-screen buttons, under the notch or home bar, broken layout)."
+# AGENT (the workflow's agent input) picks the CLI: opencode run, codex exec and gemini -p
+# are their documented headless runs; opencode and codex take no tool allowlist on the command line
+case "${AGENT:-claude}" in
+  claude)   AGENT_CMD=(claude -p "$PROMPT" --model "${MODEL:-sonnet}" --max-turns 400 --output-format json \
+              --allowedTools "Bash(bash scripts/ios/gesture.sh:*),Bash(python3 scripts/ios/screen.py:*),Bash(python3 scripts/ios/type.py:*),Bash(sleep:*),Bash(ls:*),Bash(mkdir:*),Read(AGENT_BRIEF.md),Read(briefs/**),Read(personas.json),Read(bug_report.md),Read(results/**),Write(./results/**),Edit(./results/**)") ;;
+  opencode) AGENT_CMD=(opencode run "$PROMPT" --model "${MODEL:-sonnet}") ;;
+  codex)    AGENT_CMD=(codex exec "$PROMPT" -m "${MODEL:-sonnet}" --sandbox workspace-write) ;;
+  gemini)   AGENT_CMD=(gemini -p "$PROMPT" -m "${MODEL:-sonnet}" --output-format json --approval-mode yolo) ;;
+  *) echo "::error::unknown agent ${AGENT:-}: use claude, opencode, codex or gemini"; exit 1 ;;
+esac
+"${AGENT_CMD[@]}" > results/agent-output.json 2> results/agent-errors.txt
 CODE=$?
 python3 scripts/agent_status.py results/agent-output.json results/agent-errors.txt "$PERSONA" || true
 if [ -n "$REC" ]; then

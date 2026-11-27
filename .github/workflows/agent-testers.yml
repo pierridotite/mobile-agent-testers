@@ -1,6 +1,6 @@
 # One click: build the app for Android and iOS, then give one emulator or
-# simulator to each persona, each driven by a headless Claude Code agent.
-# Everything readable (build logs, screenshots, reports) is encrypted with
+# simulator to each persona, each driven by a headless agent CLI (the agent
+# input). Everything readable (build logs, screenshots, reports) is encrypted with
 # results_public.pem before upload, because logs of a public repo are public.
 # Decrypt on your machine with: bash scripts/collect.sh <run id>
 name: Agent testers
@@ -56,8 +56,13 @@ on:
       bug_report:
         description: "Bug to reproduce instead of exploring: an issue (owner/repo#123 or its URL) or the steps as text. Agents follow it: read it first"
         default: ""
+      agent:
+        description: "Agent CLI that runs the testers on each phone: claude, opencode, codex or gemini (agent_status.py reads Claude's output; with another agent, the model input is that CLI's model name)"
+        type: choice
+        options: [claude, opencode, codex, gemini]
+        default: claude
       model:
-        description: "Model: sonnet, opus, haiku (cheapest) or a full Claude id. With llm_base_url, the provider's model name"
+        description: "Model: sonnet, opus, haiku (cheapest) or a full Claude id. With llm_base_url or another agent, the provider's model name"
         default: sonnet
       llm_base_url:
         description: "Optional: any Anthropic-compatible API instead of Claude (OpenRouter, DeepSeek, Kimi, GLM...), key in the LLM_API_KEY secret. Quality depends on how well the model reads screenshots and reasons: docs/cheaper-models.md"
@@ -260,7 +265,19 @@ jobs:
       - name: Decrypt APK
         env: { ARTIFACT_PASSPHRASE: "${{ secrets.ARTIFACT_PASSPHRASE }}" }
         run: openssl enc -d -aes-256-cbc -pbkdf2 -in app.apk.enc -out app.apk -pass env:ARTIFACT_PASSPHRASE
-      - run: pip install -q pillow && npm install -g --silent @anthropic-ai/claude-code
+      # Claude Code stays installed: the repair of replay_traces calls it directly (scripts/repair.py)
+      - name: Tools (Pillow, the agent CLI)
+        env:
+          AGENT: ${{ inputs.agent }}
+        run: |
+          pip install -q pillow
+          npm install -g --silent @anthropic-ai/claude-code
+          case "$AGENT" in
+            claude) ;;
+            opencode) npm install -g --silent opencode-ai ;;
+            codex) npm install -g --silent @openai/codex ;;
+            gemini) npm install -g --silent @google/gemini-cli ;;
+          esac
 
       # The emulator resolves DNS through the host (-dns-server 127.0.0.1):
       # dnsmasq answers 0.0.0.0 for blocked hosts, iptables drops their real IPs.
@@ -338,6 +355,7 @@ jobs:
           GEO: ${{ matrix.geo }}
           APP_ID: ${{ inputs.app_id }}
           BRIEF: ${{ inputs.bug_report != '' && inputs.brief == 'AGENT_BRIEF.md' && 'briefs/reproduce.md' || inputs.brief }}
+          AGENT: ${{ inputs.agent }}
           MODEL: ${{ inputs.model }}
           LLM_BASE_URL: ${{ inputs.llm_base_url }}
           LLM_API_KEY: ${{ (inputs.replay_traces == '' || inputs.repair != '') && secrets.LLM_API_KEY || '' }}
@@ -401,11 +419,18 @@ jobs:
           mkdir -p app && tar xzf app-ios.tgz -C app
       - name: Latest Xcode
         run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
-      - name: Tools (AXe, Pillow, Claude Code)
+      - name: Tools (AXe, Pillow, the agent CLI)
+        env:
+          AGENT: ${{ inputs.agent }}
         run: |
           brew install -q cameroncooke/axe/axe
           python3 -m pip install -q --break-system-packages pillow
-          npm install -g --silent @anthropic-ai/claude-code
+          case "$AGENT" in
+            claude) npm install -g --silent @anthropic-ai/claude-code ;;
+            opencode) npm install -g --silent opencode-ai ;;
+            codex) npm install -g --silent @openai/codex ;;
+            gemini) npm install -g --silent @google/gemini-cli ;;
+          esac
 
       # The simulator uses the Mac's network: /etc/hosts + pf block the hosts.
       - name: Block analytics and ad hosts
@@ -466,6 +491,7 @@ jobs:
           GEO: ${{ matrix.geo }}
           APP_ID: ${{ inputs.app_id }}
           BRIEF: ${{ inputs.bug_report != '' && inputs.brief == 'AGENT_BRIEF.md' && 'briefs/reproduce.md' || inputs.brief }}
+          AGENT: ${{ inputs.agent }}
           MODEL: ${{ inputs.model }}
           LLM_BASE_URL: ${{ inputs.llm_base_url }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
@@ -498,11 +524,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { persist-credentials: false }   # no token in .git/config: the agent reads text the app wrote
-      - name: Tools (Playwright with WebKit and Chromium, Claude Code)
+      - name: Tools (Playwright with WebKit and Chromium, the agent CLI)
+        env:
+          AGENT: ${{ inputs.agent }}
         run: |
           python3 -m pip install -q playwright==1.58.0 pillow
           python3 -m playwright install --with-deps webkit chromium > /dev/null
-          npm install -g --silent @anthropic-ai/claude-code
+          case "$AGENT" in
+            claude) npm install -g --silent @anthropic-ai/claude-code ;;
+            opencode) npm install -g --silent opencode-ai ;;
+            codex) npm install -g --silent @openai/codex ;;
+            gemini) npm install -g --silent @google/gemini-cli ;;
+          esac
 
       # The browser also blocks these hosts itself (scripts/web/browser.py), but its routes miss the
       # target of a redirect: /etc/hosts and the firewall close that gap, like on the other runners.
@@ -538,6 +571,7 @@ jobs:
           GEO: ${{ matrix.geo }}
           WEB_URL: ${{ inputs.web_url }}
           BRIEF: ${{ inputs.bug_report != '' && inputs.brief == 'AGENT_BRIEF.md' && 'briefs/reproduce.md' || inputs.brief }}
+          AGENT: ${{ inputs.agent }}
           MODEL: ${{ inputs.model }}
           LLM_BASE_URL: ${{ inputs.llm_base_url }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}

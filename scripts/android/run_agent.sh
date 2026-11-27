@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Runs inside android-emulator-runner once the emulator is up: checks that
 # blocked hosts are unreachable, applies the persona's phone settings,
-# installs the app and hands the emulator to Claude Code. The agent's output
-# goes to results/ (encrypted later), never to the public log.
+# installs the app and hands the emulator to the agent CLI (the workflow's
+# agent input). The agent's output goes to results/ (encrypted later), never
+# to the public log.
 set -uo pipefail
 adb wait-for-device
 mkdir -p "results/$PERSONA"
@@ -114,9 +115,17 @@ case "${MAP:-none}" in
       ECR_ACTION_LOG="$PWD/$AGENT_DIR/actions.tsv"; export ECR_ACTION_LOG; : > "$ECR_ACTION_LOG"
       adb shell am force-stop "$APP_ID"; adb shell pm clear "$APP_ID" >/dev/null   # a clean start, as the trace's launchApp
       adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 6
-      PATH="$PWD/scripts/android/shim:$PATH" claude -p "Read briefs/map.md and personas.json. A robot with no model already mapped this app: results/$PERSONA/report.md lists the screens it found and, under 'Forms the robot could not pass', the forms where it stopped. Do not map again what it found: go to each of those forms, find what they need to go further (test data only) and map the screens behind them. Your folder is $AGENT_DIR: take screenshots with python3 scripts/android/screen.py $AGENT_DIR NN, and write report.md and findings.json there. PERSONA=$PERSONA PLATFORM=android APP_ID=$APP_ID. $SETTINGS" \
-        --model "${MODEL:-sonnet}" --max-turns 200 --output-format json --allowedTools "$ALLOWED" \
-        > results/agent-output.json 2> results/agent-errors.txt
+      PROMPT="Read briefs/map.md and personas.json. A robot with no model already mapped this app: results/$PERSONA/report.md lists the screens it found and, under 'Forms the robot could not pass', the forms where it stopped. Do not map again what it found: go to each of those forms, find what they need to go further (test data only) and map the screens behind them. Your folder is $AGENT_DIR: take screenshots with python3 scripts/android/screen.py $AGENT_DIR NN, and write report.md and findings.json there. PERSONA=$PERSONA PLATFORM=android APP_ID=$APP_ID. $SETTINGS"
+      # AGENT (the workflow's agent input) picks the CLI: opencode run, codex exec and gemini -p
+      # are their documented headless runs; opencode and codex take no tool allowlist on the command line
+      case "${AGENT:-claude}" in
+        claude)   AGENT_CMD=(claude -p "$PROMPT" --model "${MODEL:-sonnet}" --max-turns 200 --output-format json --allowedTools "$ALLOWED") ;;
+        opencode) AGENT_CMD=(opencode run "$PROMPT" --model "${MODEL:-sonnet}") ;;
+        codex)    AGENT_CMD=(codex exec "$PROMPT" -m "${MODEL:-sonnet}" --sandbox workspace-write) ;;
+        gemini)   AGENT_CMD=(gemini -p "$PROMPT" -m "${MODEL:-sonnet}" --output-format json --approval-mode yolo) ;;
+        *) echo "::error::unknown agent ${AGENT:-}: use claude, opencode, codex or gemini"; exit 1 ;;
+      esac
+      PATH="$PWD/scripts/android/shim:$PATH" "${AGENT_CMD[@]}" > results/agent-output.json 2> results/agent-errors.txt
       CODE=$?
       python3 scripts/agent_status.py results/agent-output.json results/agent-errors.txt "$PERSONA" || true
       python3 scripts/ecr_trace.py "$AGENT_DIR" --persona "$PERSONA" --app-id "$APP_ID" --agent-output results/agent-output.json || true
@@ -129,9 +138,17 @@ case "${MAP:-none}" in
     ECR_ACTION_LOG="$PWD/results/$PERSONA/actions.tsv"
     export ECR_ACTION_LOG
     : > "$ECR_ACTION_LOG"
-    PATH="$PWD/scripts/android/shim:$PATH" claude -p "Read $BRIEF and personas.json, then do the mission until the final report. PERSONA=$PERSONA PLATFORM=android APP_ID=$APP_ID. $SETTINGS Report anything that does not fit this screen (cut text, off-screen buttons, broken layout)." \
-      --model "${MODEL:-sonnet}" --max-turns 400 --output-format json --allowedTools "$ALLOWED" \
-      > results/agent-output.json 2> results/agent-errors.txt
+    PROMPT="Read $BRIEF and personas.json, then do the mission until the final report. PERSONA=$PERSONA PLATFORM=android APP_ID=$APP_ID. $SETTINGS Report anything that does not fit this screen (cut text, off-screen buttons, broken layout)."
+    # AGENT (the workflow's agent input) picks the CLI: opencode run, codex exec and gemini -p
+    # are their documented headless runs; opencode and codex take no tool allowlist on the command line
+    case "${AGENT:-claude}" in
+      claude)   AGENT_CMD=(claude -p "$PROMPT" --model "${MODEL:-sonnet}" --max-turns 400 --output-format json --allowedTools "$ALLOWED") ;;
+      opencode) AGENT_CMD=(opencode run "$PROMPT" --model "${MODEL:-sonnet}") ;;
+      codex)    AGENT_CMD=(codex exec "$PROMPT" -m "${MODEL:-sonnet}" --sandbox workspace-write) ;;
+      gemini)   AGENT_CMD=(gemini -p "$PROMPT" -m "${MODEL:-sonnet}" --output-format json --approval-mode yolo) ;;
+      *) echo "::error::unknown agent ${AGENT:-}: use claude, opencode, codex or gemini"; exit 1 ;;
+    esac
+    PATH="$PWD/scripts/android/shim:$PATH" "${AGENT_CMD[@]}" > results/agent-output.json 2> results/agent-errors.txt
     CODE=$?
     python3 scripts/agent_status.py results/agent-output.json results/agent-errors.txt "$PERSONA" || true
     python3 scripts/ecr_trace.py "results/$PERSONA" --persona "$PERSONA" --app-id "$APP_ID" --agent-output results/agent-output.json || true   # never fails the run
