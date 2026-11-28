@@ -53,6 +53,8 @@ On Android, these are `adb shell settings put` calls (`secure high_text_contrast
 
 The workflow is written for GitHub Actions (job matrix, macOS runners, android-emulator-runner). The build scripts, the persona tools and the encryption ([scripts/encrypt_results.sh](scripts/encrypt_results.sh)) are portable: a GitLab CI, Bitrise or Codemagic version would reuse them.
 
+[.gitlab-ci.yml](.gitlab-ci.yml) runs the offline checks on GitLab, and the Android testers on a runner with KVM that reuses [scripts/build/android.sh](scripts/build/android.sh) and [scripts/android/run_agent.sh](scripts/android/run_agent.sh) unchanged; iOS still needs a macOS runner. Bitrise and Codemagic are still open: one per issue.
+
 ### More build systems
 
 Framework detection is in [scripts/build/detect.sh](scripts/build/detect.sh), and each framework is one `case` in [scripts/build/android.sh](scripts/build/android.sh) and [scripts/build/ios.sh](scripts/build/ios.sh). Unity or Godot would each be one more case, tested with a stand-in for the build tool.
