@@ -1,0 +1,88 @@
+# GitLab CI for mobile-agent-testers.
+#
+# Two parts, mirroring the GitHub workflow:
+#
+#   * `test` (always): the offline checks of .github/workflows/tests.yml. They need
+#     no phone, no model and no secret, so they run unchanged on any GitLab runner.
+#   * `testers` (manual): the Android testers of .github/workflows/agent-testers.yml.
+#     They reuse this repository's own scripts and need a runner with KVM, an
+#     Android SDK and a booted emulator, plus the same secrets. See the job below.
+#
+# iOS builds and testers need a macOS runner, which gitlab.com's shared runners are
+# not. Add your own macOS runner and reuse scripts/build/ios.sh and
+# scripts/ios/run_agent.sh to port those jobs the same way.
+#
+# Test it offline, with no runner: `python3 -m unittest tests.test_gitlab_ci`.
+
+stages:
+  - test
+  - testers
+
+# --- Offline checks: every push and merge request. No phone, no model, no secret. ---
+# Same commands as .github/workflows/tests.yml. The two Python versions are the
+# python3 of a Mac without Homebrew (where collect.sh runs) and a current one.
+.unit-tests:
+  stage: test
+  script:
+    - python3 -m unittest discover -s tests -q
+    - python3 -m compileall -q scripts tests
+
+unit-tests-3.9:
+  extends: .unit-tests
+  image: python:3.9
+
+unit-tests-3.13:
+  extends: .unit-tests
+  image: python:3.13
+
+shell-scripts:
+  stage: test
+  image: debian:stable-slim
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq shellcheck
+  script:
+    - for f in $(git ls-files '*.sh'); do bash -n "$f"; done
+    - shellcheck -S warning $(git ls-files '*.sh')
+
+# --- The Android testers (manual): build the app, then give it to one agent. ---
+#
+# Runner: tagged `kvm`, with KVM, the Android SDK (ANDROID_HOME) and a booted
+# emulator. scripts/android/run_agent.sh assumes an emulator is already up, exactly
+# as it does under the GitHub action (reactivecircus/android-emulator-runner), so
+# the emulator's lifecycle is the runner's here too.
+#
+# Project variables to set (Settings > CI/CD > Variables, masked): the model key
+# (LLM_API_KEY for llm_base_url, or CLAUDE_CODE_OAUTH_TOKEN for Claude) and
+# ARTIFACT_PASSPHRASE, then commit results_public.pem (./setup.sh creates it).
+#
+# Run it from CI/CD > Pipelines (Run pipeline) or the play button; set PERSONA to
+# another persona of personas.json. Everything readable is encrypted before it is
+# kept, because the logs of a public repo are public.
+android-testers:
+  stage: testers
+  tags:
+    - kvm
+  when: manual
+  timeout: 2h
+  variables:
+    APP_DIR: demo-app
+    FRAMEWORK: auto
+    APP_ID: com.example.tinytodo
+    PERSONA: anna
+    BRIEF: AGENT_BRIEF.md
+    MODEL: sonnet
+    BLOCK_HOSTS: app.posthog.com eu.i.posthog.com us.i.posthog.com graph.facebook.com api.mixpanel.com api2.amplitude.com
+  script:
+    - 'test -s results_public.pem || { echo "results_public.pem is missing - run ./setup.sh first"; exit 1; }'
+    - bash scripts/build/android.sh "$APP_DIR" "$FRAMEWORK"
+    - bash scripts/android/run_agent.sh
+  after_script:
+    # The agent can write to the workspace and this step runs a script by name
+    # afterwards: put the trusted scripts and the public key back first.
+    - git checkout -- scripts results_public.pem
+    - bash scripts/encrypt_results.sh "$PERSONA"
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - results.enc/
